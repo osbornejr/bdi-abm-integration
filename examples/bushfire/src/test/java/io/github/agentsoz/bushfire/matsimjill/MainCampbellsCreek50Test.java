@@ -52,51 +52,33 @@ public class MainCampbellsCreek50Test {
 		Main.main(args);
 		
 		// first print out the actuals so we have them even if it fails afterwards
-
 		long actualEvents = CRCChecksum.getCRCFromFile( utils.getOutputDirectory() + "/output_events.xml.gz" ) ;
 		System.err.println("actual(events)="+actualEvents) ;
 
 		long actualPlans = CRCChecksum.getCRCFromFile( utils.getOutputDirectory() + "/output_plans.xml.gz" ) ;
 		System.err.println("actual(plans)="+actualPlans) ;
 
-		long [] expectedEvents = new long [] {
-                CRCChecksum.getCRCFromFile( utils.getInputDirectory() + "/output_events.xml.gz" ), 
-		        //CRCChecksum.getCRCFromFile( utils.getInputDirectory() + "/1/output_events.xml.gz" ), 
-				//CRCChecksum.getCRCFromFile( utils.getInputDirectory() + "/1/output_events.xml.gz" ), 
-				// 3214464728 mvn console, eclipse single
-				//CRCChecksum.getCRCFromFile( utils.getInputDirectory() + "/2/output_events.xml.gz" ), 
-				// 1316710466 eclipse in context
-				//				CRCChecksum.getCRCFromFile( utils.getInputDirectory() + "/3/output_events.xml.gz" ) 
-                3114851905L // 3695594801L // travis
-		} ;
+		// now do the comparisons:
+		{
+			List<Long> expecteds = checkSeveralFiles("output_events.xml.gz", utils.getInputDirectory() ) ;
+			expecteds.add(3114851905L) ; // travis
+			checkSeveral(expecteds, actualEvents);
+		}
+		{
+			List<Long> expecteds = checkSeveralFiles("output_plans.xml.gz", utils.getInputDirectory() ) ;
+			expecteds.add(2234597649L) ; // travis
+			checkSeveral(expecteds, actualPlans);
+		}
 
-		long [] expectedPlans = new long [] {
-		        CRCChecksum.getCRCFromFile( utils.getInputDirectory() + "/output_plans.xml.gz" ), 
-				//CRCChecksum.getCRCFromFile( utils.getInputDirectory() + "/1/output_plans.xml.gz" ), 
-				// 1884178769 mvn console, eclipse single
-				//CRCChecksum.getCRCFromFile( utils.getInputDirectory() + "/2/output_plans.xml.gz" ),
-				// eclipse in context
-				//				CRCChecksum.getCRCFromFile( utils.getInputDirectory() + "/3/output_plans.xml.gz" )
-		        2234597649L // 547669447L // travis
-		} ;
-
-        checkSeveral(expectedEvents, actualEvents);
-        checkSeveral(expectedPlans, actualPlans);
-
-		//		{
-		//			long expectedCRC = CRCChecksum.getCRCFromFile( utils.getInputDirectory() + "/jill.out" ) ;
-		//			long actualCRC = CRCChecksum.getCRCFromFile( "scenarios/campbells-creek/jill.out" ) ;
-		//			Assert.assertEquals (expectedCRC, actualCRC); 
-		//		}
 	}
 
-	public static void checkSeveralFiles(long actual, final String cmpFileName, String baseDir ) {
+	public static List<Long> checkSeveralFiles(final String cmpFileName, String baseDir ) {
 		List<Long> expecteds = new ArrayList<>() ;
 	
 		try {
 			Files.walkFileTree(new File(baseDir).toPath(), new SimpleFileVisitor<Path>() {
 				@Override public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-					final String filename = dir + cmpFileName;
+					final String filename = dir + "/" + cmpFileName;
 					if ( Files.exists( new File( filename).toPath() ) ) {
 						System.err.println( "checking against " + filename );
 						long crc = CRCChecksum.getCRCFromFile( filename ) ; 
@@ -109,7 +91,7 @@ public class MainCampbellsCreek50Test {
 			throw new UncheckedIOException(e.getMessage(), e);
 		}
 	
-		checkSeveral(expecteds, actual);
+		return expecteds ;
 	}
 
 	public static void checkSeveral(List<Long> expecteds, long actualEvents) {
