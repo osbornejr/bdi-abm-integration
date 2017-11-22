@@ -75,17 +75,26 @@ public final class DRIVETODefaultActionHandler implements BDIActionHandler {
     
     		List<PlanElement> planElements = plan.getPlanElements() ;
     
-    		int planElementsIndex = planElements.size()-1;
+//    		int planElementsIndex = planElements.size()-1;
     		// seems that under normal circumstances in this pgm, size returns 1 und idx is thus 0.
+    		int planElementsIndex = WithinDayAgentUtils.getCurrentPlanElementIndex(agent1) ;
+
+    		if ( ! ( planElements.get(planElementsIndex) instanceof Activity ) ) {
+    			throw new RuntimeException("not at activity; not possible with this version") ;
+    		}
     
     		Activity lastAct = (Activity)planElements.get(planElementsIndex);
     		// i.e. this would be the first activity
     
     		double endTime = departureTime;
-    		if(endTime <= lastAct.getStartTime() +10){
-    			endTime = lastAct.getStartTime() +10;
-    		}
+//    		if(endTime <= lastAct.getStartTime() +10){
+//    			endTime = lastAct.getStartTime() +10;
+//    		}
     		lastAct.setEndTime(endTime);
+    		
+    		for ( int ii=planElements.size()-1 ; ii>planElementsIndex ; ii-- ) {
+    			plan.getPlanElements().remove(ii) ;
+    		}
     
     		// now the real work begins. This changes the activity (i.e. the destination of the current leg) and then
     		// re-splices the plan

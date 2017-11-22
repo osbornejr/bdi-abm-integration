@@ -50,9 +50,17 @@ public class MainCampbellsCreek50Test {
 		"}"};
 
 		Main.main(args);
+		
+		// first print out the actuals so we have them even if it fails afterwards
+
+		long actualEvents = CRCChecksum.getCRCFromFile( utils.getOutputDirectory() + "/output_events.xml.gz" ) ;
+		System.err.println("actual(events)="+actualEvents) ;
+
+		long actualPlans = CRCChecksum.getCRCFromFile( utils.getOutputDirectory() + "/output_plans.xml.gz" ) ;
+		System.err.println("actual(plans)="+actualPlans) ;
 
 		long [] expectedEvents = new long [] {
-                CRCChecksum.getCRCFromFile( utils.getInputDirectory() + "/0/output_events.xml.gz" ), 
+                CRCChecksum.getCRCFromFile( utils.getInputDirectory() + "/output_events.xml.gz" ), 
 		        //CRCChecksum.getCRCFromFile( utils.getInputDirectory() + "/1/output_events.xml.gz" ), 
 				//CRCChecksum.getCRCFromFile( utils.getInputDirectory() + "/1/output_events.xml.gz" ), 
 				// 3214464728 mvn console, eclipse single
@@ -63,7 +71,7 @@ public class MainCampbellsCreek50Test {
 		} ;
 
 		long [] expectedPlans = new long [] {
-		        CRCChecksum.getCRCFromFile( utils.getInputDirectory() + "/0/output_plans.xml.gz" ), 
+		        CRCChecksum.getCRCFromFile( utils.getInputDirectory() + "/output_plans.xml.gz" ), 
 				//CRCChecksum.getCRCFromFile( utils.getInputDirectory() + "/1/output_plans.xml.gz" ), 
 				// 1884178769 mvn console, eclipse single
 				//CRCChecksum.getCRCFromFile( utils.getInputDirectory() + "/2/output_plans.xml.gz" ),
@@ -71,12 +79,6 @@ public class MainCampbellsCreek50Test {
 				//				CRCChecksum.getCRCFromFile( utils.getInputDirectory() + "/3/output_plans.xml.gz" )
 		        2234597649L // 547669447L // travis
 		} ;
-
-		long actualEvents = CRCChecksum.getCRCFromFile( utils.getOutputDirectory() + "/output_events.xml.gz" ) ;
-		System.err.println("actual(events)="+actualEvents) ;
-
-		long actualPlans = CRCChecksum.getCRCFromFile( utils.getOutputDirectory() + "/output_plans.xml.gz" ) ;
-		System.err.println("actual(plans)="+actualPlans) ;
 
         checkSeveral(expectedEvents, actualEvents);
         checkSeveral(expectedPlans, actualPlans);
