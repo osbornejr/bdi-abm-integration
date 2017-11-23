@@ -67,16 +67,12 @@ public final class DRIVETODefaultActionHandler implements BDIActionHandler {
 
 		double departureTime = (double)args[2];
 		
-		//double now = model.getTime() ; 
-    
     		MobsimAgent agent1 = model.getMobsimDataProvider().getAgents().get(Id.createPersonId(agentID));
     
     		Plan plan = WithinDayAgentUtils.getModifiablePlan(agent1) ;
     
     		List<PlanElement> planElements = plan.getPlanElements() ;
     
-//    		int planElementsIndex = planElements.size()-1;
-    		// seems that under normal circumstances in this pgm, size returns 1 und idx is thus 0.
     		int planElementsIndex = WithinDayAgentUtils.getCurrentPlanElementIndex(agent1) ;
 
     		if ( ! ( planElements.get(planElementsIndex) instanceof Activity ) ) {
@@ -84,13 +80,8 @@ public final class DRIVETODefaultActionHandler implements BDIActionHandler {
     		}
     
     		Activity lastAct = (Activity)planElements.get(planElementsIndex);
-    		// i.e. this would be the first activity
     
-    		double endTime = departureTime;
-//    		if(endTime <= lastAct.getStartTime() +10){
-//    			endTime = lastAct.getStartTime() +10;
-//    		}
-    		lastAct.setEndTime(endTime);
+    		lastAct.setEndTime(departureTime);
     		
     		for ( int ii=planElements.size()-1 ; ii>planElementsIndex ; ii-- ) {
     			plan.getPlanElements().remove(ii) ;
@@ -103,7 +94,7 @@ public final class DRIVETODefaultActionHandler implements BDIActionHandler {
     
     		Leg newLeg = model.getScenario().getPopulation().getFactory().createLeg(TransportMode.car);
     //		// new Route for current Leg.
-    		newLeg.setDepartureTime(endTime);
+//    		newLeg.setDepartureTime(departureTime);
     //		editRoutes.relocateFutureLegRoute(newLeg, lastAct.getLinkId(), newActivityLinkId,((HasPerson)agent).getPerson());
     		// --- old version end
     
@@ -111,10 +102,6 @@ public final class DRIVETODefaultActionHandler implements BDIActionHandler {
     
     		planElements.add(newLeg);
     		planElements.add(newAct); 
-    		
-    //		final List<Trip> trips = TripStructureUtils.getTrips(planElements, stageActivities);
-    		
-    //		Gbl.assertIf( trips.size()>=1 );
     		
     		List<PlanElement> sublist = planElements.subList(planElements.size()-3, planElements.size() ) ;
     		// (the sub-list is "exclusive" the right index)

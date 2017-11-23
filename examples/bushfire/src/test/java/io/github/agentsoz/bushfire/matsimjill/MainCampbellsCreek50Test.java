@@ -10,16 +10,29 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
+import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.events.PersonArrivalEvent;
+import org.matsim.api.core.v01.events.PersonDepartureEvent;
+import org.matsim.api.core.v01.events.VehicleEntersTrafficEvent;
+import org.matsim.api.core.v01.events.handler.PersonArrivalEventHandler;
+import org.matsim.api.core.v01.events.handler.PersonDepartureEventHandler;
+import org.matsim.api.core.v01.events.handler.VehicleEntersTrafficEventHandler;
+import org.matsim.api.core.v01.population.Person;
+import org.matsim.core.api.experimental.events.EventsManager;
+import org.matsim.core.events.EventsManagerImpl;
+import org.matsim.core.events.MatsimEventsReader;
 import org.matsim.core.utils.io.UncheckedIOException;
 import org.matsim.core.utils.misc.CRCChecksum;
 import org.matsim.testcases.MatsimTestUtils;
-import io.github.agentsoz.bushfire.matsimjill.Main;
 /**
  * @author dsingh
  *
@@ -51,12 +64,26 @@ public class MainCampbellsCreek50Test {
 
 		Main.main(args);
 		
-		// first print out the actuals so we have them even if it fails afterwards
-		long actualEvents = CRCChecksum.getCRCFromFile( utils.getOutputDirectory() + "/output_events.xml.gz" ) ;
-		System.err.println("actual(events)="+actualEvents) ;
 
+		// first print out the actuals so we have them even if it fails afterwards
+		final String filenameActuals = utils.getOutputDirectory() + "/output_events.xml.gz";
+		long actualEvents = CRCChecksum.getCRCFromFile( filenameActuals ) ;
+		System.err.println("actual(events)="+actualEvents) ;
+		
 		long actualPlans = CRCChecksum.getCRCFromFile( utils.getOutputDirectory() + "/output_plans.xml.gz" ) ;
 		System.err.println("actual(plans)="+actualPlans) ;
+
+		SortedMap<Id<Person>, List<Double>> arrivalsActual = collectArrivals(filenameActuals);
+
+		final String filenameExpected = utils.getInputDirectory() + "/output_events.xml.gz" ;
+		SortedMap<Id<Person>, List<Double>> arrivalsExpected = collectArrivals(filenameExpected);
+		
+//		Assert.assertEquals( arrivalsExpected, arrivalsActual ) ;
+		// if I see this correctly, both the assert implementation uses equals in the correct way, and
+		// the collections implement it in the way we need it. kai, nov'17
+		// yyyyyy but we want to give it some slack!!
+		
+		compareEventsWithSlack(arrivalsExpected, arrivalsActual, 5.);
 
 		// now do the comparisons:
 		{
@@ -70,6 +97,89 @@ public class MainCampbellsCreek50Test {
 			checkSeveral(expecteds, actualPlans);
 		}
 
+	}
+
+	public static void compareEventsWithSlack(SortedMap<Id<Person>, List<Double>> arrivalsExpected,
+			SortedMap<Id<Person>, List<Double>> arrivalsActual, double slack) {
+		Assert.assertEquals( arrivalsExpected.size(), arrivalsActual.size() ) ;
+		Iterator<Entry<Id<Person>, List<Double>>> itActual = arrivalsActual.entrySet().iterator() ;
+		Iterator<Entry<Id<Person>, List<Double>>> itExpected = arrivalsExpected.entrySet().iterator() ;
+		double differencesSum = 0. ;
+		long differencesCnt = 0 ;
+		while ( itActual.hasNext() ) {
+			Entry<Id<Person>, List<Double>> actual = itActual.next() ;
+			Entry<Id<Person>, List<Double>> expected = itExpected.next() ;
+			Assert.assertEquals( expected.getKey(), actual.getKey() );
+			Assert.assertEquals( expected.getValue().size(), actual.getValue().size() ) ;
+			Iterator<Double> itExpectedArrivals = expected.getValue().iterator() ; 
+			Iterator<Double> itActualArrivals = actual.getValue().iterator() ;
+			while ( itExpectedArrivals.hasNext() ) {
+				double expectedArrival = itExpectedArrivals.next() ;
+				double actualArrival = itActualArrivals.next() ;
+				if ( expectedArrival != actualArrival ) {
+					final double difference = actualArrival-expectedArrival;
+					differencesSum += difference ;
+					differencesCnt ++ ;
+					System.err.println( "personId=" + expected.getKey()
+					+ ";\texpectedTime=" + expectedArrival
+					+ ";\tactualTime=" + actualArrival
+					+ ";\tdifference=" + difference );
+				}
+				Assert.assertEquals(expectedArrival, actualArrival,slack);
+			}
+		}
+		if ( differencesCnt > 0 ) {
+			System.err.println( "differencesSum=" + differencesSum + ";\tdifferencesAv=" + differencesSum/differencesCnt );
+		}
+	}
+
+	public static SortedMap<Id<Person>, List<Double>> collectArrivals(final String filename) {
+		SortedMap<Id<Person>,List<Double>> actualArrivals = new TreeMap<>() ;
+		EventsManager events = new EventsManagerImpl() ;
+		events.addHandler(new PersonArrivalEventHandler(){
+			@Override public void handleEvent(PersonArrivalEvent event) {
+				Id<Person> personId = event.getPersonId() ;
+				if ( !actualArrivals.containsKey(personId) ) {
+					actualArrivals.put(personId, new ArrayList<Double>() ) ;
+				}
+				List<Double> list = actualArrivals.get( personId ) ;
+				list.add( event.getTime() ) ;
+			}
+		});
+		new MatsimEventsReader(events).readFile(filename);
+		return actualArrivals ;
+	}
+	public static SortedMap<Id<Person>, List<Double>> collectDepartures(final String filename) {
+		SortedMap<Id<Person>,List<Double>> actualDepartures = new TreeMap<>() ;
+		EventsManager events = new EventsManagerImpl() ;
+		events.addHandler(new PersonDepartureEventHandler(){
+			@Override public void handleEvent(PersonDepartureEvent event) {
+				Id<Person> personId = event.getPersonId() ;
+				if ( !actualDepartures.containsKey(personId) ) {
+					actualDepartures.put(personId, new ArrayList<Double>() ) ;
+				}
+				List<Double> list = actualDepartures.get( personId ) ;
+				list.add( event.getTime() ) ;
+			}
+		});
+		new MatsimEventsReader(events).readFile(filename);
+		return actualDepartures ;
+	}
+	public static SortedMap<Id<Person>, List<Double>> collectEnterTraffic(final String filename) {
+		SortedMap<Id<Person>,List<Double>> actualDepartures = new TreeMap<>() ;
+		EventsManager events = new EventsManagerImpl() ;
+		events.addHandler(new VehicleEntersTrafficEventHandler(){
+			@Override public void handleEvent(VehicleEntersTrafficEvent event) {
+				Id<Person> personId = event.getPersonId() ;
+				if ( !actualDepartures.containsKey(personId) ) {
+					actualDepartures.put(personId, new ArrayList<Double>() ) ;
+				}
+				List<Double> list = actualDepartures.get( personId ) ;
+				list.add( event.getTime() ) ;
+			}
+		});
+		new MatsimEventsReader(events).readFile(filename);
+		return actualDepartures ;
 	}
 
 	public static List<Long> checkSeveralFiles(final String cmpFileName, String baseDir ) {

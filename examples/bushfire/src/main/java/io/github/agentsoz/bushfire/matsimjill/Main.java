@@ -9,18 +9,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.TreeMap;
 
-import javax.inject.Singleton;
-
 import org.json.simple.parser.ParseException;
-import org.matsim.api.core.v01.Scenario;
-import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.events.handler.EventHandler;
-import org.matsim.core.scenario.ScenarioUtils;
 import org.slf4j.LoggerFactory;
-
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
@@ -28,9 +19,6 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.FileAppender;
-import io.github.agentsoz.bdimatsim.DRIVETODefaultActionHandler;
-import io.github.agentsoz.bdimatsim.EventsMonitorRegistry;
-import io.github.agentsoz.bdimatsim.MATSimActionList;
 
 /*
  * #%L
@@ -60,7 +48,6 @@ import io.github.agentsoz.bushfire.PhoenixFireModule;
 import io.github.agentsoz.bushfire.Time;
 import io.github.agentsoz.bushfire.datamodels.Location;
 import io.github.agentsoz.dataInterface.DataServer;
-import io.github.agentsoz.nonmatsim.PAAgentManager;
 import io.github.agentsoz.util.Global;
 
 public class Main {
