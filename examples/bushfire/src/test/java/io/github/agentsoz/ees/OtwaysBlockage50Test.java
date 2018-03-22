@@ -40,11 +40,10 @@ public class OtwaysBlockage50Test {
                 "--config", "scenarios/otways/otways-50/scenario_main.xml",
                 "--logfile", "scenarios/otways/otways-50/scenario.log",
                 "--loglevel", "INFO",
-                //	                "--plan-selection-policy", "FIRST", // ensures it is deterministic, as default is RANDOM
+                //	                 "--plan-selection-policy", "FIRST", // ensures it is deterministic, as default is RANDOM
                 "--seed", "12345",
                 "--safeline-output-file-pattern", "scenarios/otways/otways-50/safeline.%d%.out",
                 MATSimModel.MATSIM_OUTPUT_DIRECTORY_CONFIG_INDICATOR, utils.getOutputDirectory(),
-                EvacConfig.SETUP_INDICATOR, EvacConfig.Setup.blockage.name(),
                 "--jillconfig", "--config={" +
                 "agents:[{classname:io.github.agentsoz.ees.agents.Resident, args:null, count:50}]," +
                 "logLevel: WARN," +
